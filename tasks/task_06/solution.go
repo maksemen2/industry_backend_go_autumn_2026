@@ -6,6 +6,7 @@ type entry[K comparable, V any] struct {
 	key   K
 	value V
 }
+
 type LRUCache[K comparable, V any] struct {
 	capacity int
 	ll       list.List
@@ -13,13 +14,46 @@ type LRUCache[K comparable, V any] struct {
 }
 
 func NewLRUCache[K comparable, V any](capacity int) *LRUCache[K, V] {
-	panic("TODO: implement")
+	return &LRUCache[K, V]{
+		capacity: capacity,
+		items:    make(map[K]*list.Element),
+	}
 }
+
 func (c *LRUCache[K, V]) Get(key K) (value V, ok bool) {
-	panic("TODO: implement")
+	if c.capacity <= 0 {
+		return value, false
+	}
+
+	if elem, found := c.items[key]; found {
+		c.ll.MoveToFront(elem)
+		return elem.Value.(*entry[K, V]).value, true
+	}
+
+	return value, false
 }
+
 func (c *LRUCache[K, V]) Set(key K, value V) {
-	panic("TODO: implement")
+	if c.capacity <= 0 {
+		return
+	}
+
+	if elem, found := c.items[key]; found {
+		elem.Value.(*entry[K, V]).value = value
+		return
+	}
+
+	if c.ll.Len() >= c.capacity {
+		backElem := c.ll.Back()
+		if backElem != nil {
+			c.ll.Remove(backElem)
+			delete(c.items, backElem.Value.(*entry[K, V]).key)
+		}
+	}
+
+	newEntry := &entry[K, V]{key: key, value: value}
+	elem := c.ll.PushFront(newEntry)
+	c.items[key] = elem
 }
 
 type LRU[K comparable, V any] interface {
